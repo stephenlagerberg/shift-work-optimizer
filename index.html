@@ -54,16 +54,27 @@
                 const time = hourValue.toString().padStart(2, '0');
                 sleepLabel.innerText = `${time}:00`;
                 
-                const isNightShift = shiftSelect.value === 'night';
-                // Night shift optimal sleep anchor is typically daytime (07:00 - 15:00)
-                const isLateSleep = hourValue >= 7 && hourValue <= 15;
-
-                if (isNightShift && isLateSleep) {
-                    analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your sleep window is anchored correctly for night shift recovery.';
-                } else if (isNightShift) {
-                    analysis.innerHTML = '<span class="text-amber-400 font-bold">Warning:</span> Your sleep window is at risk of circadian misalignment. Try shifting to a daytime sleep anchor.';
-                } else {
-                    analysis.innerHTML = '<span class="text-blue-400 font-bold">Standard Sync:</span> Roster parameters are aligned with typical diurnal cycles.';
+                const shift = shiftSelect.value;
+                
+                // Logic based on shift and sleep window
+                if (shift === 'night') {
+                    if (hourValue >= 7 && hourValue <= 15) {
+                        analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your sleep window is anchored correctly for night shift recovery.';
+                    } else {
+                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Warning:</span> Your sleep window is at risk of circadian misalignment. Try shifting to a daytime sleep anchor (07:00 - 15:00).';
+                    }
+                } else if (shift === 'day') {
+                    if (hourValue >= 21 || hourValue <= 1) {
+                        analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Sleep window is anchored for standard diurnal recovery.';
+                    } else {
+                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Sleep window is unconventional for a day shift. Ensure nocturnal consistency.';
+                    }
+                } else if (shift === 'swing') {
+                    if (hourValue >= 0 && hourValue <= 6) {
+                        analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Sleep window is well-suited for post-swing shift recovery.';
+                    } else {
+                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Consider aligning sleep window closer to early morning hours (00:00 - 06:00) for better swing shift recovery.';
+                    }
                 }
             }
 
