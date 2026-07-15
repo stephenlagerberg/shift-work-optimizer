@@ -49,8 +49,19 @@
             const sleepLabel = document.getElementById('sleepLabel');
             const analysis = document.getElementById('analysis');
             
-            // Assuming a standard 7-hour physiological recovery requirement
             const SLEEP_DURATION = 7;
+
+            function checkOverlap(start, duration, workStart, workEnd) {
+                for (let i = 0; i < duration; i++) {
+                    let hour = (start + i) % 24;
+                    if (workStart < workEnd) {
+                        if (hour >= workStart && hour < workEnd) return true;
+                    } else {
+                        if (hour >= workStart || hour < workEnd) return true;
+                    }
+                }
+                return false;
+            }
 
             function update() {
                 const hourValue = parseInt(sleepSlider.value, 10);
@@ -60,23 +71,29 @@
                 const shift = shiftSelect.value;
                 const sleepEnd = (hourValue + SLEEP_DURATION) % 24;
                 
-                // Logic based on shift and the full duration of the recovery window
+                let workStart, workEnd;
+                if (shift === 'day') { workStart = 7; workEnd = 15; }
+                else if (shift === 'swing') { workStart = 15; workEnd = 23; }
+                else { workStart = 23; workEnd = 7; }
+
+                if (checkOverlap(hourValue, SLEEP_DURATION, workStart, workEnd)) {
+                    analysis.innerHTML = '<span class="text-red-400 font-bold">Conflict:</span> Your selected sleep window overlaps directly with your scheduled duty hours. Please select a start time outside of your work shift.';
+                    return;
+                }
+                
                 if (shift === 'night') {
-                    // Ideal night recovery is ~07:00 to 14:00/15:00
                     if (hourValue >= 7 && hourValue <= 8) {
                         analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is anchored correctly for night shift recovery.`;
                     } else {
                         analysis.innerHTML = '<span class="text-amber-400 font-bold">Warning:</span> Your sleep window is at risk of circadian misalignment. Try shifting to a morning anchor (07:00 - 08:00) to ensure a full recovery window.';
                     }
                 } else if (shift === 'day') {
-                    // Day shift usually requires sleep ending before 07:00
                     if (hourValue >= 21 || hourValue <= 23) {
                         analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is anchored for standard diurnal recovery.`;
                     } else {
-                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Your recovery window is unconventional for a day shift. Ensure you are not overlapping with pre-shift hours.';
+                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Your recovery window is unconventional for a day shift. Ensure you are not overlapping with your shift or pre-shift hours.';
                     }
                 } else if (shift === 'swing') {
-                    // Swing shift usually allows sleep from ~00:00 to 07:00
                     if (hourValue >= 0 && hourValue <= 1) {
                         analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is well-suited for post-swing shift recovery.`;
                     } else {
