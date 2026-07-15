@@ -40,14 +40,15 @@
             </div>
 
             <!-- Result Box -->
-            <div id="result" class="p-4 rounded-lg bg-zinc-900 border border-zinc-800 hidden">
+            <div id="result" class="p-4 rounded-lg bg-zinc-900 border border-zinc-800 hidden space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
                         <div id="duration" class="text-2xl font-bold"></div>
-                        <div id="syncStatus" class="text-sm"></div>
+                        <div id="exhaustionLevel" class="text-sm font-semibold mt-1"></div>
                     </div>
                     <div id="badge" class="px-3 py-1 rounded-full text-xs font-bold"></div>
                 </div>
+                <div id="syncStatus" class="text-xs text-zinc-400 italic"></div>
             </div>
         </div>
     </div>
@@ -68,7 +69,27 @@
             
             const [wS, wE] = shift.split('-').map(Number);
             
-            // Check if sleep window overlaps with shift
+            // Fatigue/Exhaustion Factor
+            // < 5hrs: Severe, 5-7hrs: High, 7-9hrs: Optimal
+            let fatigueFactor = "";
+            let badgeClass = "";
+            let badgeText = "";
+            
+            if (hours < 5) {
+                fatigueFactor = "Severe Exhaustion (High Impairment)";
+                badgeClass = "bg-red-900 text-red-200";
+                badgeText = "CRITICAL";
+            } else if (hours < 7) {
+                fatigueFactor = "Elevated Exhaustion (Reduced Cognitive Speed)";
+                badgeClass = "bg-amber-900 text-amber-200";
+                badgeText = "WARNING";
+            } else {
+                fatigueFactor = "Recovery Optimal";
+                badgeClass = "bg-emerald-900 text-emerald-200";
+                badgeText = "SYNCED";
+            }
+
+            // Overlap check
             const isOverlap = (start < stop) ? 
                 (start < wE && stop > wS) : 
                 (start < wE || stop > wS);
@@ -76,22 +97,18 @@
             const result = document.getElementById('result');
             result.classList.remove('hidden');
             document.getElementById('duration').innerText = `${hours.toFixed(1)} hours of sleep`;
+            document.getElementById('exhaustionLevel').innerText = fatigueFactor;
             
             const badge = document.getElementById('badge');
             const status = document.getElementById('syncStatus');
             
+            badge.innerText = badgeText;
+            badge.className = `px-3 py-1 rounded-full text-xs font-bold ${badgeClass}`;
+            
             if (isOverlap) {
-                status.innerText = "Conflict Detected: Your sleep window overlaps with your work hours.";
-                badge.innerText = "CRITICAL";
-                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-red-900 text-red-200";
-            } else if (hours < 6) {
-                status.innerText = "Insufficient recovery time for a safe shift.";
-                badge.innerText = "WARNING";
-                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-900 text-amber-200";
+                status.innerText = "Conflict Detected: Sleep window overlaps with duty.";
             } else {
                 status.innerText = "Sleep window is clear of duty period.";
-                badge.innerText = "SYNCED";
-                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-900 text-emerald-200";
             }
         }
 
