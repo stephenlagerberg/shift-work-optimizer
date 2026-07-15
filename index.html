@@ -3,107 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Circadian Shift & Work-Life Sync Optimizer</title>
+    <title>Shift & Sleep Sync Optimizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=JetBrains+Mono&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030712; color: #f3f4f6; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        body { background-color: #09090b; color: #e4e4e7; font-family: 'Inter', system-ui, sans-serif; }
+        .glass { background: rgba(24, 24, 27, 0.8); border: 1px solid #3f3f46; backdrop-filter: blur(10px); }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 bg-slate-950">
-    <div class="max-w-4xl mx-auto space-y-8">
-        <header class="border-b border-slate-800 pb-6">
-            <h1 class="text-3xl font-extrabold text-white">Circadian Shift & Work-Life Sync Optimizer</h1>
-            <p class="text-slate-400 mt-2">Design-to-safety modeling tool for high-tempo aviation shift rosters.</p>
-        </header>
-
-        <div class="glass-panel rounded-2xl p-8">
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="space-y-4">
-                    <label class="block text-sm font-semibold text-slate-300">Shift Type</label>
-                    <select id="shiftType" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
-                        <option value="day">Day Shift (07:00 - 15:00)</option>
-                        <option value="swing">Swing Shift (15:00 - 23:00)</option>
-                        <option value="night">Midnight Shift (23:00 - 07:00)</option>
+<body class="p-4 md:p-12">
+    <div class="max-w-2xl mx-auto space-y-6">
+        <h1 class="text-2xl font-bold">Sleep/Shift Sync Optimizer</h1>
+        
+        <div class="glass rounded-xl p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Shift Selection -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-zinc-400">Shift Schedule</label>
+                    <select id="shift" class="w-full bg-zinc-900 border border-zinc-700 rounded p-2">
+                        <option value="07-15">Day (07:00 - 15:00)</option>
+                        <option value="15-23">Swing (15:00 - 23:00)</option>
+                        <option value="23-07">Night (23:00 - 07:00)</option>
                     </select>
                 </div>
-                <div class="space-y-4">
-                    <label class="block text-sm font-semibold text-slate-300">Sleep Start: <span id="sleepStartLabel" class="text-indigo-400 font-mono">08:00</span></label>
-                    <input type="range" id="sleepStart" min="0" max="23" value="8" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
-                </div>
-                <div class="space-y-4">
-                    <label class="block text-sm font-semibold text-slate-300">Duration: <span id="sleepDurLabel" class="text-indigo-400 font-mono">7h</span></label>
-                    <input type="range" id="sleepDuration" min="4" max="12" value="7" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+
+                <!-- Sleep Window -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-zinc-400">Bedtime</label>
+                        <input type="time" id="bedtime" value="22:00" class="w-full bg-zinc-900 border border-zinc-700 rounded p-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-zinc-400">Wake Time</label>
+                        <input type="time" id="waketime" value="06:00" class="w-full bg-zinc-900 border border-zinc-700 rounded p-2">
+                    </div>
                 </div>
             </div>
-            <div class="mt-8 pt-8 border-t border-slate-800">
-                <div id="analysis" class="text-slate-300 italic">Adjust sliders to see circadian analysis...</div>
+
+            <!-- Result Box -->
+            <div id="result" class="p-4 rounded-lg bg-zinc-900 border border-zinc-800 hidden">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div id="duration" class="text-2xl font-bold"></div>
+                        <div id="syncStatus" class="text-sm"></div>
+                    </div>
+                    <div id="badge" class="px-3 py-1 rounded-full text-xs font-bold"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const shiftSelect = document.getElementById('shiftType');
-            const sleepSlider = document.getElementById('sleepStart');
-            const durationSlider = document.getElementById('sleepDuration');
-            const sleepStartLabel = document.getElementById('sleepStartLabel');
-            const sleepDurLabel = document.getElementById('sleepDurLabel');
-            const analysis = document.getElementById('analysis');
+        const inputs = ['shift', 'bedtime', 'waketime'];
+        
+        function calculate() {
+            const shift = document.getElementById('shift').value;
+            const bed = document.getElementById('bedtime').value.split(':').map(Number);
+            const wake = document.getElementById('waketime').value.split(':').map(Number);
             
-            function checkOverlap(start, duration, workStart, workEnd) {
-                for (let i = 0; i < duration; i++) {
-                    let hour = (start + i) % 24;
-                    if (workStart < workEnd) {
-                        if (hour >= workStart && hour < workEnd) return true;
-                    } else {
-                        if (hour >= workStart || hour < workEnd) return true;
-                    }
-                }
-                return false;
-            }
-
-            function update() {
-                const startHour = parseInt(sleepSlider.value, 10);
-                const duration = parseInt(durationSlider.value, 10);
-                
-                sleepStartLabel.innerText = `${startHour.toString().padStart(2, '0')}:00`;
-                sleepDurLabel.innerText = `${duration}h`;
-                
-                const shift = shiftSelect.value;
-                const sleepEnd = (startHour + duration) % 24;
-                const endLabel = sleepEnd.toString().padStart(2, '0');
-                
-                let workStart, workEnd;
-                if (shift === 'day') { workStart = 7; workEnd = 15; }
-                else if (shift === 'swing') { workStart = 15; workEnd = 23; }
-                else { workStart = 23; workEnd = 7; }
-
-                if (checkOverlap(startHour, duration, workStart, workEnd)) {
-                    analysis.innerHTML = `<span class="text-red-400 font-bold">Conflict:</span> Your sleep window (${startHour.toString().padStart(2, '0')}:00 - ${endLabel}:00) overlaps with your duty hours.`;
-                    return;
-                }
-                
-                analysis.innerHTML = `<span class="text-slate-200">Sleep Window:</span> <strong class="text-emerald-400">${startHour.toString().padStart(2, '0')}:00 to ${endLabel}:00</strong>. `;
-                
-                if (shift === 'night' && startHour >= 7 && startHour <= 8) {
-                    analysis.innerHTML += '<span class="text-emerald-400 font-bold">Optimal Alignment for Night Shift.</span>';
-                } else if (shift === 'day' && (startHour >= 21 || startHour <= 23)) {
-                    analysis.innerHTML += '<span class="text-emerald-400 font-bold">Optimal Alignment for Day Shift.</span>';
-                } else {
-                    analysis.innerHTML += '<span class="text-amber-400 font-bold">Consider adjusting anchor times for better circadian recovery.</span>';
-                }
-            }
-
-            shiftSelect.addEventListener('change', update);
-            sleepSlider.addEventListener('input', update);
-            durationSlider.addEventListener('input', update);
+            let start = bed[0] + bed[1] / 60;
+            let stop = wake[0] + wake[1] / 60;
             
-            update();
-        });
+            let hours = stop - start;
+            if (hours < 0) hours += 24;
+            
+            const [wS, wE] = shift.split('-').map(Number);
+            
+            // Check if sleep window overlaps with shift
+            const isOverlap = (start < stop) ? 
+                (start < wE && stop > wS) : 
+                (start < wE || stop > wS);
+
+            const result = document.getElementById('result');
+            result.classList.remove('hidden');
+            document.getElementById('duration').innerText = `${hours.toFixed(1)} hours of sleep`;
+            
+            const badge = document.getElementById('badge');
+            const status = document.getElementById('syncStatus');
+            
+            if (isOverlap) {
+                status.innerText = "Conflict Detected: Your sleep window overlaps with your work hours.";
+                badge.innerText = "CRITICAL";
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-red-900 text-red-200";
+            } else if (hours < 6) {
+                status.innerText = "Insufficient recovery time for a safe shift.";
+                badge.innerText = "WARNING";
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-900 text-amber-200";
+            } else {
+                status.innerText = "Sleep window is clear of duty period.";
+                badge.innerText = "SYNCED";
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-900 text-emerald-200";
+            }
+        }
+
+        inputs.forEach(id => document.getElementById(id).addEventListener('change', calculate));
+        calculate();
     </script>
 </body>
 </html>
