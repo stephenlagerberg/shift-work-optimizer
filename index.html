@@ -7,17 +7,66 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=JetBrains+Mono&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030712; color: #f3f4f6; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
     </style>
 </head>
-<body class="min-h-screen p-8 flex items-center justify-center bg-slate-950">
-    <div class="max-w-3xl w-full text-center space-y-6">
-        <h1 class="text-4xl font-extrabold text-white">Mental Altitude Consulting</h1>
-        <p class="text-slate-400">Welcome to the Shift Work-Life Sync Optimizer.</p>
-        <div class="p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-xl text-indigo-200">
-            System Online: Operational Readiness Verified
+<body class="min-h-screen p-4 md:p-8 bg-slate-950">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <header class="border-b border-slate-800 pb-6">
+            <h1 class="text-3xl font-extrabold text-white">Circadian Shift & Work-Life Sync Optimizer</h1>
+            <p class="text-slate-400 mt-2">Design-to-safety modeling tool for high-tempo aviation shift rosters.</p>
+        </header>
+
+        <div class="glass-panel rounded-2xl p-8">
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <label class="block text-sm font-semibold text-slate-300">Shift Type</label>
+                    <select id="shiftType" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
+                        <option value="day">Day Shift (07:00 - 15:00)</option>
+                        <option value="swing">Swing Shift (15:00 - 23:00)</option>
+                        <option value="night">Midnight Shift (23:00 - 07:00)</option>
+                    </select>
+                </div>
+                <div class="space-y-4">
+                    <label class="block text-sm font-semibold text-slate-300">Sleep Start Hour</label>
+                    <input type="range" id="sleepStart" min="0" max="23" value="8" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    <span id="sleepLabel" class="text-indigo-400 font-mono">08:00</span>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-slate-800">
+                <div id="analysis" class="text-slate-300 italic">Adjust sliders to see circadian analysis...</div>
+            </div>
         </div>
     </div>
+
+    <script>
+        const shiftSelect = document.getElementById('shiftType');
+        const sleepSlider = document.getElementById('sleepStart');
+        const sleepLabel = document.getElementById('sleepLabel');
+        const analysis = document.getElementById('analysis');
+
+        function update() {
+            const time = sleepSlider.value.padStart(2, '0');
+            sleepLabel.innerText = `${time}:00`;
+            
+            const isNightShift = shiftSelect.value === 'night';
+            const isLateSleep = sleepSlider.value >= 7 && sleepSlider.value <= 15;
+
+            if (isNightShift && isLateSleep) {
+                analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your sleep window is anchored correctly for night shift recovery.';
+            } else if (isNightShift) {
+                analysis.innerHTML = '<span class="text-amber-400 font-bold">Warning:</span> Your sleep window is at risk of circadian misalignment. Try shifting to a daytime sleep anchor.';
+            } else {
+                analysis.innerHTML = '<span class="text-blue-400 font-bold">Standard Sync:</span> Roster parameters are aligned with typical diurnal cycles.';
+            }
+        }
+
+        shiftSelect.onchange = update;
+        sleepSlider.oninput = update;
+        update();
+    </script>
 </body>
 </html>
