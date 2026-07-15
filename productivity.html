@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronotype Peak Mapper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen p-4 md:p-12">
+    <div class="max-w-3xl mx-auto space-y-8">
+        <header>
+            <h1 class="text-3xl font-bold tracking-tight">Chronotype Productivity Mapper</h1>
+            <p class="text-zinc-400">Align your workflow with your biological peak.</p>
+        </header>
+
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6">
+            <div id="quiz" class="space-y-4">
+                <p class="text-lg font-medium">When do you feel most alert and mentally sharp?</p>
+                <div class="grid gap-3">
+                    <button onclick="calculate('Morning')" class="text-left p-4 rounded-xl border border-zinc-700 hover:bg-zinc-800 transition">Morning (Lark): 6am - 10am</button>
+                    <button onclick="calculate('Midday')" class="text-left p-4 rounded-xl border border-zinc-700 hover:bg-zinc-800 transition">Midday (Bird): 10am - 2pm</button>
+                    <button onclick="calculate('Evening')" class="text-left p-4 rounded-xl border border-zinc-700 hover:bg-zinc-800 transition">Evening (Owl): 4pm - 9pm</button>
+                </div>
+            </div>
+
+            <div id="dashboard" class="hidden space-y-6">
+                <div class="p-6 bg-zinc-950 rounded-xl border border-zinc-800">
+                    <h2 id="resultTitle" class="text-2xl font-bold mb-2"></h2>
+                    <p id="resultDesc" class="text-zinc-400"></p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-zinc-800 rounded-lg">
+                        <h4 class="text-xs uppercase text-zinc-400 font-bold mb-2">Deep Work</h4>
+                        <p id="deepWork" class="font-mono text-emerald-400"></p>
+                    </div>
+                    <div class="p-4 bg-zinc-800 rounded-lg">
+                        <h4 class="text-xs uppercase text-zinc-400 font-bold mb-2">Admin/Email</h4>
+                        <p id="admin" class="font-mono text-amber-400"></p>
+                    </div>
+                    <div class="p-4 bg-zinc-800 rounded-lg">
+                        <h4 class="text-xs uppercase text-zinc-400 font-bold mb-2">Recovery</h4>
+                        <p id="recovery" class="font-mono text-sky-400"></p>
+                    </div>
+                </div>
+                <button onclick="location.reload()" class="text-sm text-zinc-500 underline">Reset Mapping</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const profiles = {
+            'Morning': { 
+                title: 'Early Bird (Lark)', 
+                desc: 'Your biology is primed for high-cognition tasks before noon.',
+                deep: '7:00 AM - 10:00 AM', admin: '1:00 PM - 3:00 PM', recovery: '8:00 PM' 
+            },
+            'Midday': { 
+                title: 'Standard Bird', 
+                desc: 'You maintain consistent energy levels throughout the standard business day.',
+                deep: '10:00 AM - 1:00 PM', admin: '3:00 PM - 5:00 PM', recovery: '10:00 PM' 
+            },
+            'Evening': { 
+                title: 'Night Owl', 
+                desc: 'Your creative peak arrives after the sun goes down.',
+                deep: '5:00 PM - 8:00 PM', admin: '10:00 AM - 12:00 PM', recovery: '1:00 AM' 
+            }
+        };
+
+        function calculate(type) {
+            const data = profiles[type];
+            document.getElementById('quiz').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('resultTitle').innerText = data.title;
+            document.getElementById('resultDesc').innerText = data.desc;
+            document.getElementById('deepWork').innerText = data.deep;
+            document.getElementById('admin').innerText = data.admin;
+            document.getElementById('recovery').innerText = data.recovery;
+        }
+    </script>
+</body>
+</html>
