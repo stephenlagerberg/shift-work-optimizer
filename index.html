@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shift & Sleep Sync Optimizer</title>
+    <title>Flexible Shift & Sleep Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #09090b; color: #e4e4e7; font-family: 'Inter', system-ui, sans-serif; }
@@ -12,29 +12,25 @@
 </head>
 <body class="p-4 md:p-12">
     <div class="max-w-2xl mx-auto space-y-6">
-        <h1 class="text-2xl font-bold">Sleep/Shift Sync Optimizer</h1>
+        <h1 class="text-2xl font-bold">Custom Shift Sync Optimizer</h1>
         
         <div class="glass rounded-xl p-6 space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Shift Selection -->
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-zinc-400">Shift Schedule</label>
-                    <select id="shift" class="w-full bg-zinc-900 border border-zinc-700 rounded p-2">
-                        <option value="07-15">Day (07:00 - 15:00)</option>
-                        <option value="15-23">Swing (15:00 - 23:00)</option>
-                        <option value="23-07">Night (23:00 - 07:00)</option>
-                    </select>
+                <div class="space-y-4">
+                    <label class="text-sm font-medium text-zinc-400 block">Duty Period</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="time" id="shiftStart" value="09:00" class="bg-zinc-900 border border-zinc-700 rounded p-2 text-white">
+                        <input type="time" id="shiftEnd" value="17:00" class="bg-zinc-900 border border-zinc-700 rounded p-2 text-white">
+                    </div>
                 </div>
 
                 <!-- Sleep Window -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium text-zinc-400">Bedtime</label>
-                        <input type="time" id="bedtime" value="22:00" class="w-full bg-zinc-900 border border-zinc-700 rounded p-2">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium text-zinc-400">Wake Time</label>
-                        <input type="time" id="waketime" value="06:00" class="w-full bg-zinc-900 border border-zinc-700 rounded p-2">
+                <div class="space-y-4">
+                    <label class="text-sm font-medium text-zinc-400 block">Sleep Window</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="time" id="bedtime" value="23:00" class="bg-zinc-900 border border-zinc-700 rounded p-2 text-white">
+                        <input type="time" id="waketime" value="07:00" class="bg-zinc-900 border border-zinc-700 rounded p-2 text-white">
                     </div>
                 </div>
             </div>
@@ -43,73 +39,66 @@
             <div id="result" class="p-4 rounded-lg bg-zinc-900 border border-zinc-800 hidden space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
-                        <div id="duration" class="text-2xl font-bold"></div>
+                        <div id="duration" class="text-xl font-bold"></div>
                         <div id="exhaustionLevel" class="text-sm font-semibold mt-1"></div>
                     </div>
-                    <div id="badge" class="px-3 py-1 rounded-full text-xs font-bold"></div>
+                    <div id="badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"></div>
                 </div>
-                <div id="syncStatus" class="text-xs text-zinc-400 italic"></div>
+                <div id="syncStatus" class="text-sm text-zinc-400"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const inputs = ['shift', 'bedtime', 'waketime'];
+        const inputs = ['shiftStart', 'shiftEnd', 'bedtime', 'waketime'];
         
+        function toDecimal(timeStr) {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h + m / 60;
+        }
+
         function calculate() {
-            const shift = document.getElementById('shift').value;
-            const bed = document.getElementById('bedtime').value.split(':').map(Number);
-            const wake = document.getElementById('waketime').value.split(':').map(Number);
+            const sStart = toDecimal(document.getElementById('shiftStart').value);
+            const sEnd = toDecimal(document.getElementById('shiftEnd').value);
+            const b = toDecimal(document.getElementById('bedtime').value);
+            const w = toDecimal(document.getElementById('waketime').value);
             
-            let start = bed[0] + bed[1] / 60;
-            let stop = wake[0] + wake[1] / 60;
+            // Calculate sleep duration
+            let sleepHours = w - b;
+            if (sleepHours < 0) sleepHours += 24;
             
-            let hours = stop - start;
-            if (hours < 0) hours += 24;
+            // Check for Shift Overlap
+            // A shift crosses midnight if start > end
+            const shiftCrosses = sStart >= sEnd;
+            const sleepCrosses = b >= w;
             
-            const [wS, wE] = shift.split('-').map(Number);
-            
-            // Fatigue/Exhaustion Factor
-            // < 5hrs: Severe, 5-7hrs: High, 7-9hrs: Optimal
-            let fatigueFactor = "";
-            let badgeClass = "";
-            let badgeText = "";
-            
-            if (hours < 5) {
-                fatigueFactor = "Severe Exhaustion (High Impairment)";
-                badgeClass = "bg-red-900 text-red-200";
-                badgeText = "CRITICAL";
-            } else if (hours < 7) {
-                fatigueFactor = "Elevated Exhaustion (Reduced Cognitive Speed)";
-                badgeClass = "bg-amber-900 text-amber-200";
-                badgeText = "WARNING";
-            } else {
-                fatigueFactor = "Recovery Optimal";
-                badgeClass = "bg-emerald-900 text-emerald-200";
-                badgeText = "SYNCED";
+            // Logic: Is there any intersection between [b, w] and [sStart, sEnd]?
+            // Simplest: Check if any minute of sleep falls within shift
+            let overlap = false;
+            let checkTime = b;
+            for(let i = 0; i < (sleepHours * 60); i++) {
+                let hour = Math.floor(checkTime);
+                let min = Math.round((checkTime - hour) * 60);
+                let timeVal = hour + min/60;
+                
+                if (shiftCrosses) {
+                    if (timeVal >= sStart || timeVal < sEnd) overlap = true;
+                } else {
+                    if (timeVal >= sStart && timeVal < sEnd) overlap = true;
+                }
+                checkTime = (checkTime + 1/60) % 24;
             }
 
-            // Overlap check
-            const isOverlap = (start < stop) ? 
-                (start < wE && stop > wS) : 
-                (start < wE || stop > wS);
+            const fatigue = sleepHours < 5 ? "Critical" : (sleepHours < 7 ? "Warning" : "Optimal");
+            const color = sleepHours < 5 ? "bg-red-900 text-red-200" : (sleepHours < 7 ? "bg-amber-900 text-amber-200" : "bg-emerald-900 text-emerald-200");
 
             const result = document.getElementById('result');
             result.classList.remove('hidden');
-            document.getElementById('duration').innerText = `${hours.toFixed(1)} hours of sleep`;
-            document.getElementById('exhaustionLevel').innerText = fatigueFactor;
-            
-            const badge = document.getElementById('badge');
-            const status = document.getElementById('syncStatus');
-            
-            badge.innerText = badgeText;
-            badge.className = `px-3 py-1 rounded-full text-xs font-bold ${badgeClass}`;
-            
-            if (isOverlap) {
-                status.innerText = "Conflict Detected: Sleep window overlaps with duty.";
-            } else {
-                status.innerText = "Sleep window is clear of duty period.";
-            }
+            document.getElementById('duration').innerText = `${sleepHours.toFixed(1)} hours of sleep`;
+            document.getElementById('exhaustionLevel').innerText = `Fatigue Status: ${fatigue}`;
+            document.getElementById('badge').innerText = fatigue;
+            document.getElementById('badge').className = `px-3 py-1 rounded-full text-xs font-bold ${color}`;
+            document.getElementById('syncStatus').innerText = overlap ? "⚠️ ALERT: Your sleep window overlaps with your work hours." : "✅ Status: No direct overlap detected.";
         }
 
         inputs.forEach(id => document.getElementById(id).addEventListener('change', calculate));
