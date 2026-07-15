@@ -21,7 +21,7 @@
         </header>
 
         <div class="glass-panel rounded-2xl p-8">
-            <div class="grid md:grid-cols-2 gap-8">
+            <div class="grid md:grid-cols-3 gap-8">
                 <div class="space-y-4">
                     <label class="block text-sm font-semibold text-slate-300">Shift Type</label>
                     <select id="shiftType" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
@@ -31,9 +31,12 @@
                     </select>
                 </div>
                 <div class="space-y-4">
-                    <label class="block text-sm font-semibold text-slate-300">Sleep Start Hour</label>
+                    <label class="block text-sm font-semibold text-slate-300">Sleep Start: <span id="sleepStartLabel" class="text-indigo-400 font-mono">08:00</span></label>
                     <input type="range" id="sleepStart" min="0" max="23" value="8" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
-                    <span id="sleepLabel" class="text-indigo-400 font-mono">08:00</span>
+                </div>
+                <div class="space-y-4">
+                    <label class="block text-sm font-semibold text-slate-300">Duration: <span id="sleepDurLabel" class="text-indigo-400 font-mono">7h</span></label>
+                    <input type="range" id="sleepDuration" min="4" max="12" value="7" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
             <div class="mt-8 pt-8 border-t border-slate-800">
@@ -46,11 +49,11 @@
         document.addEventListener("DOMContentLoaded", () => {
             const shiftSelect = document.getElementById('shiftType');
             const sleepSlider = document.getElementById('sleepStart');
-            const sleepLabel = document.getElementById('sleepLabel');
+            const durationSlider = document.getElementById('sleepDuration');
+            const sleepStartLabel = document.getElementById('sleepStartLabel');
+            const sleepDurLabel = document.getElementById('sleepDurLabel');
             const analysis = document.getElementById('analysis');
             
-            const SLEEP_DURATION = 7;
-
             function checkOverlap(start, duration, workStart, workEnd) {
                 for (let i = 0; i < duration; i++) {
                     let hour = (start + i) % 24;
@@ -64,46 +67,40 @@
             }
 
             function update() {
-                const hourValue = parseInt(sleepSlider.value, 10);
-                const time = hourValue.toString().padStart(2, '0');
-                sleepLabel.innerText = `${time}:00`;
+                const startHour = parseInt(sleepSlider.value, 10);
+                const duration = parseInt(durationSlider.value, 10);
+                
+                sleepStartLabel.innerText = `${startHour.toString().padStart(2, '0')}:00`;
+                sleepDurLabel.innerText = `${duration}h`;
                 
                 const shift = shiftSelect.value;
-                const sleepEnd = (hourValue + SLEEP_DURATION) % 24;
+                const sleepEnd = (startHour + duration) % 24;
+                const endLabel = sleepEnd.toString().padStart(2, '0');
                 
                 let workStart, workEnd;
                 if (shift === 'day') { workStart = 7; workEnd = 15; }
                 else if (shift === 'swing') { workStart = 15; workEnd = 23; }
                 else { workStart = 23; workEnd = 7; }
 
-                if (checkOverlap(hourValue, SLEEP_DURATION, workStart, workEnd)) {
-                    analysis.innerHTML = '<span class="text-red-400 font-bold">Conflict:</span> Your selected sleep window overlaps directly with your scheduled duty hours. Please select a start time outside of your work shift.';
+                if (checkOverlap(startHour, duration, workStart, workEnd)) {
+                    analysis.innerHTML = `<span class="text-red-400 font-bold">Conflict:</span> Your sleep window (${startHour.toString().padStart(2, '0')}:00 - ${endLabel}:00) overlaps with your duty hours.`;
                     return;
                 }
                 
-                if (shift === 'night') {
-                    if (hourValue >= 7 && hourValue <= 8) {
-                        analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is anchored correctly for night shift recovery.`;
-                    } else {
-                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Warning:</span> Your sleep window is at risk of circadian misalignment. Try shifting to a morning anchor (07:00 - 08:00) to ensure a full recovery window.';
-                    }
-                } else if (shift === 'day') {
-                    if (hourValue >= 21 || hourValue <= 23) {
-                        analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is anchored for standard diurnal recovery.`;
-                    } else {
-                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Your recovery window is unconventional for a day shift. Ensure you are not overlapping with your shift or pre-shift hours.';
-                    }
-                } else if (shift === 'swing') {
-                    if (hourValue >= 0 && hourValue <= 1) {
-                        analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is well-suited for post-swing shift recovery.`;
-                    } else {
-                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Consider aligning your sleep start to midnight (00:00 - 01:00) for optimal swing shift recovery.';
-                    }
+                analysis.innerHTML = `<span class="text-slate-200">Sleep Window:</span> <strong class="text-emerald-400">${startHour.toString().padStart(2, '0')}:00 to ${endLabel}:00</strong>. `;
+                
+                if (shift === 'night' && startHour >= 7 && startHour <= 8) {
+                    analysis.innerHTML += '<span class="text-emerald-400 font-bold">Optimal Alignment for Night Shift.</span>';
+                } else if (shift === 'day' && (startHour >= 21 || startHour <= 23)) {
+                    analysis.innerHTML += '<span class="text-emerald-400 font-bold">Optimal Alignment for Day Shift.</span>';
+                } else {
+                    analysis.innerHTML += '<span class="text-amber-400 font-bold">Consider adjusting anchor times for better circadian recovery.</span>';
                 }
             }
 
             shiftSelect.addEventListener('change', update);
             sleepSlider.addEventListener('input', update);
+            durationSlider.addEventListener('input', update);
             
             update();
         });
