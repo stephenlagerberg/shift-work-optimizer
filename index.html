@@ -48,6 +48,9 @@
             const sleepSlider = document.getElementById('sleepStart');
             const sleepLabel = document.getElementById('sleepLabel');
             const analysis = document.getElementById('analysis');
+            
+            // Assuming a standard 7-hour physiological recovery requirement
+            const SLEEP_DURATION = 7;
 
             function update() {
                 const hourValue = parseInt(sleepSlider.value, 10);
@@ -55,25 +58,29 @@
                 sleepLabel.innerText = `${time}:00`;
                 
                 const shift = shiftSelect.value;
+                const sleepEnd = (hourValue + SLEEP_DURATION) % 24;
                 
-                // Logic based on shift and sleep window
+                // Logic based on shift and the full duration of the recovery window
                 if (shift === 'night') {
-                    if (hourValue >= 7 && hourValue <= 15) {
-                        analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your sleep window is anchored correctly for night shift recovery.';
+                    // Ideal night recovery is ~07:00 to 14:00/15:00
+                    if (hourValue >= 7 && hourValue <= 8) {
+                        analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is anchored correctly for night shift recovery.`;
                     } else {
-                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Warning:</span> Your sleep window is at risk of circadian misalignment. Try shifting to a daytime sleep anchor (07:00 - 15:00).';
+                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Warning:</span> Your sleep window is at risk of circadian misalignment. Try shifting to a morning anchor (07:00 - 08:00) to ensure a full recovery window.';
                     }
                 } else if (shift === 'day') {
-                    if (hourValue >= 21 || hourValue <= 1) {
-                        analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Sleep window is anchored for standard diurnal recovery.';
+                    // Day shift usually requires sleep ending before 07:00
+                    if (hourValue >= 21 || hourValue <= 23) {
+                        analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is anchored for standard diurnal recovery.`;
                     } else {
-                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Sleep window is unconventional for a day shift. Ensure nocturnal consistency.';
+                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Your recovery window is unconventional for a day shift. Ensure you are not overlapping with pre-shift hours.';
                     }
                 } else if (shift === 'swing') {
-                    if (hourValue >= 0 && hourValue <= 6) {
-                        analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Sleep window is well-suited for post-swing shift recovery.';
+                    // Swing shift usually allows sleep from ~00:00 to 07:00
+                    if (hourValue >= 0 && hourValue <= 1) {
+                        analysis.innerHTML = `<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your ${SLEEP_DURATION}-hour window (${time}:00 - ${sleepEnd.toString().padStart(2, '0')}:00) is well-suited for post-swing shift recovery.`;
                     } else {
-                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Consider aligning sleep window closer to early morning hours (00:00 - 06:00) for better swing shift recovery.';
+                        analysis.innerHTML = '<span class="text-amber-400 font-bold">Note:</span> Consider aligning your sleep start to midnight (00:00 - 01:00) for optimal swing shift recovery.';
                     }
                 }
             }
@@ -81,7 +88,6 @@
             shiftSelect.addEventListener('change', update);
             sleepSlider.addEventListener('input', update);
             
-            // Initial call to set state on load
             update();
         });
     </script>
