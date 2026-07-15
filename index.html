@@ -50,11 +50,13 @@
             const analysis = document.getElementById('analysis');
 
             function update() {
-                const time = sleepSlider.value.padStart(2, '0');
+                const hourValue = parseInt(sleepSlider.value, 10);
+                const time = hourValue.toString().padStart(2, '0');
                 sleepLabel.innerText = `${time}:00`;
                 
                 const isNightShift = shiftSelect.value === 'night';
-                const isLateSleep = sleepSlider.value >= 7 && sleepSlider.value <= 15;
+                // Night shift optimal sleep anchor is typically daytime (07:00 - 15:00)
+                const isLateSleep = hourValue >= 7 && hourValue <= 15;
 
                 if (isNightShift && isLateSleep) {
                     analysis.innerHTML = '<span class="text-emerald-400 font-bold">Optimal Alignment:</span> Your sleep window is anchored correctly for night shift recovery.';
@@ -68,7 +70,7 @@
             shiftSelect.addEventListener('change', update);
             sleepSlider.addEventListener('input', update);
             
-            // Initial call
+            // Initial call to set state on load
             update();
         });
     </script>
